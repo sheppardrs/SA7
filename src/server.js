@@ -3,6 +3,11 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import path from 'path';
 import morgan from 'morgan';
+import mongoose from 'mongoose';
+
+import * as Polls from './controllers/poll_controller';
+
+// This file is copied from the assignment's starter pack
 
 // initialize
 const app = express();
@@ -29,8 +34,47 @@ app.use(bodyParser.json());
 
 // default index route
 app.get('/', (req, res) => {
-  res.send('hi');
+  Polls.getPolls().then((polls) => {
+    res.render('index', { polls });
+  }).catch((error) => {
+    res.send(`error: ${error}`);
+  });
+  // res.send('hello world!');
 });
+
+// example only!
+app.get('/polls/:id', (req, res) => {
+  /* for POST you would use req.body for fields */
+  // req.params.id would have the :id part of the route
+  // someMethod
+});
+
+app.post('/new', (req, res) => {
+  const newpoll = {
+    text: req.body.text,
+    imageURL: req.body.imageURL,
+  };
+  Polls.createPoll(newpoll).then((poll) => {
+    res.redirect('/');
+  });
+});
+
+app.post('/vote/:id', (req, res) => {
+  const vote = (req.body.vote === 'up'); // convert to boolean
+  Polls.vote(req.params.id, vote).then((result) => {
+    res.send(result);
+  });
+});
+
+app.get('/new', (req, res) => {
+  res.render('new');
+});
+
+// DB setup copied from SA7
+const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost/cs52poll';
+mongoose.connect(mongoURI);
+// set mongoose promises to es6 default
+mongoose.Promise = global.Promise;
 
 // START THE SERVER
 // =============================================================================
